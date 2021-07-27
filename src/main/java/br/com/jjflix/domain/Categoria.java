@@ -1,5 +1,6 @@
 package br.com.jjflix.domain;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
@@ -12,8 +13,10 @@ import javax.persistence.OneToMany;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-public class Categoria {
+public class Categoria implements Serializable{
 
+    private static final long serialVersionUID = 1L;
+ 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) 
     private Long id;

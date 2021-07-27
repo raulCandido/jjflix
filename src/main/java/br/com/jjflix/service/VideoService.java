@@ -30,6 +30,10 @@ public class VideoService {
 	Optional<Video> optional = videoRepository.findById(id);
 	return optional.orElseThrow(() -> new ResourceNotFoundException("Não encontrado."));
     }
+    
+    public List<Video> buscarVideoPorTitulo(String titulo){
+	return videoRepository.findByTituloContainingIgnoreCase(titulo);
+    }
 
     public boolean verificarCategoria(VideoDTO videoDTO) {
 	if (videoDTO.getCategoriaId() == null) {
@@ -38,6 +42,11 @@ public class VideoService {
 	return false;
     }
     
+    public void verificarListaVazia(List<Video> videos) {
+	if (videos.isEmpty()) {
+	    throw new ResourceNotFoundException("Recurso não encontrado.");
+	}
+    }
 
     public Video inserirVideo(Video video) {
 	return videoRepository.save(video);

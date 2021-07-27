@@ -1,8 +1,8 @@
 package br.com.jjflix.resource;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
@@ -17,12 +17,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import br.com.jjflix.domain.Categoria;
 import br.com.jjflix.domain.Video;
 import br.com.jjflix.domain.dto.VideoDTO;
+import br.com.jjflix.exception.ResourceNotFoundException;
 import br.com.jjflix.service.CategoriaService;
 import br.com.jjflix.service.VideoService;
 import br.com.jjflix.util.Util;
@@ -33,20 +35,24 @@ public class VideoResource {
 
     @Autowired
     private VideoService videoService;
-    
+
     @Autowired
     private CategoriaService categoriaService;
 
     @GetMapping
     public List<VideoDTO> buscarVideos() {
 	List<Video> videos = videoService.buscarVideos();
-	List<VideoDTO> videosDTO = new ArrayList<VideoDTO>();
-	
-	videos.forEach(e ->{
-	    videosDTO.add(new VideoDTO(e));
-	});
-	
-	return videosDTO;
+	List<VideoDTO> videosDto = videos.stream().map(v -> new VideoDTO(v)).collect(Collectors.toList());
+
+	return videosDto;
+    }
+
+    @GetMapping(params = "search")
+    public List<VideoDTO> buscarVideosPorTitulo(@RequestParam(name = "search") String titulo) {
+	List<Video> videos = videoService.buscarVideoPorTitulo(titulo);
+	videoService.verificarListaVazia(videos);
+	List<VideoDTO> videosDto = videos.stream().map(v -> new VideoDTO(v)).collect(Collectors.toList());
+	return videosDto;
     }
 
     @GetMapping(value = "/{id}")
@@ -57,30 +63,37 @@ public class VideoResource {
 
     @PostMapping()
     @Transactional
-    public ResponseEntity<Video> inserirVideo(@Valid @RequestBody VideoDTO videoDTO, UriComponentsBuilder componentsBuilder) {
-	
+    public ResponseEntity<VideoDTO> inserirVideo(@Valid @RequestBody VideoDTO videoDTO,
+	    UriComponentsBuilder componentsBuilder) {
+
 	Categoria categoria = new Categoria();
-	
-	if(videoService.verificarCategoria(videoDTO)) {
+
+	if (videoService.verificarCategoria(videoDTO)) {
 	    categoria = categoriaService.buscarCategoria(1L);
-	}else {
+	} else {
 	    categoria = categoriaService.buscarCategoria(videoDTO.getCategoriaId());
 	}
 	Video video = videoDTO.converterVideoDtoEmVideo(videoDTO, categoria);
-	
-	videoService.inserirVideo(video);
+
+	video = videoService.inserirVideo(video);
 	URI uri = componentsBuilder.path("/{id}").buildAndExpand(video.getId()).toUri();
-	return ResponseEntity.created(uri).body(video);
+	return ResponseEntity.created(uri).body(new VideoDTO(video));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> editarVideo(@Valid @RequestBody VideoDTO videoDTO, @PathVariable Long id) {
+    public ResponseEntity<VideoDTO> editarVideo(@Valid @RequestBody VideoDTO videoDTO, @PathVariable Long id) {
 	Video video = videoService.buscarVideoPorId(id);
 	video.setTitulo(videoDTO.getTitulo());
 	video.setDescricao(videoDTO.getDescricao());
 	video.setUrl(videoDTO.getUrl());
-	videoService.inserirVideo(video);
-	return ResponseEntity.ok(video);
+
+	if (video.getCategoria().getId() != videoDTO.getCategoriaId()) {
+	    Categoria categoria = categoriaService.buscarCategoria(videoDTO.getCategoriaId());
+	    video.setCategoria(categoria);
+	}
+
+	video = videoService.inserirVideo(video);
+	return ResponseEntity.ok(new VideoDTO(video));
     }
 
     @DeleteMapping(value = "/{id}")
