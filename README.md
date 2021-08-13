@@ -1,2 +1,2 @@
-# jjflix
-Alura Challenges Project
+# JJflix
+
