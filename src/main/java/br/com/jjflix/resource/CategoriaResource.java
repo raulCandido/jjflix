@@ -23,7 +23,6 @@ import br.com.jjflix.domain.Categoria;
 import br.com.jjflix.domain.Video;
 import br.com.jjflix.domain.dto.CategoriaDTO;
 import br.com.jjflix.domain.dto.VideoDTO;
-import br.com.jjflix.exception.ResourceNotFoundException;
 import br.com.jjflix.service.CategoriaService;
 import br.com.jjflix.service.VideoService;
 import br.com.jjflix.util.Util;
